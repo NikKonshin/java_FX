@@ -1,0 +1,37 @@
+.button{
+-fx-background-color: black;
+-fx-font-size: 22px;
+-fx-text-fill: yellow;
+-fx-control-inner-background: black;
+-fx-border-color: gray;
+}
+.root{
+-fx-background-color: black;
+}
+#btnC{
+-fx-background-color: orange;
+-fx-text-fill: black;
+}
+#btnSumm, btnSubtraction, btnMul, btnDel{
+-fx-background-color: gray;
+-fx-text-fill: black;
+}
+#btnSubtraction{
+-fx-background-color: gray;
+-fx-text-fill: black;
+}
+#btnMul{
+-fx-background-color: gray;
+-fx-text-fill: black;
+}
+#btnDel{
+-fx-background-color: gray;
+-fx-text-fill: black;
+}
+#btnEql{
+-fx-background-color: gray;
+-fx-text-fill: black;
+}
+.text-field{
+-fx-font-size: 20px;
+}

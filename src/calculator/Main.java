@@ -1,4 +1,4 @@
-package sample;
+package calculator;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -10,9 +10,9 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception{
-        Parent root = FXMLLoader.load(getClass().getResource("sample.fxml"));
-        primaryStage.setTitle("Chat Window");
-        primaryStage.setScene(new Scene(root, 593, 500));
+        Parent root = FXMLLoader.load(getClass().getResource("sample_calc.fxml"));
+        primaryStage.setTitle("Калькулятор");
+        primaryStage.setScene(new Scene(root, 300, 285));
         primaryStage.setResizable(false);
         primaryStage.show();
     }

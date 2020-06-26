@@ -1,0 +1,10 @@
+#send{
+-fx-background-color: green;
+-fx-text-fill: white;
+-fx-font-size: 15px;
+
+}
+.text-area{
+-fx-control-inner-background: #145b5f;
+-fx-text-fill: white;
+}
