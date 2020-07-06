@@ -1,4 +1,4 @@
-package sample;
+package chat.client;
 
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
@@ -12,8 +12,7 @@ public class Main extends Application {
     public void start(Stage primaryStage) throws Exception{
         Parent root = FXMLLoader.load(getClass().getResource("sample.fxml"));
         primaryStage.setTitle("Chat Window");
-        primaryStage.setScene(new Scene(root, 593, 500));
-        primaryStage.setResizable(false);
+        primaryStage.setScene(new Scene(root, 450, 275));
         primaryStage.show();
     }
 
