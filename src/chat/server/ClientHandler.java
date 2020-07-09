@@ -4,8 +4,11 @@ import com.sun.org.apache.xerces.internal.impl.xpath.XPath;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.logging.SocketHandler;
 
 public class ClientHandler {
@@ -26,8 +29,11 @@ public class ClientHandler {
             out = new DataOutputStream(socket.getOutputStream());
             new Thread(() -> {
                 try {
+                    socket.setSoTimeout(120000);// устонавливаю таймер
+
                     //цикл аутентификации
                     while (true) {
+
                         String str = in.readUTF();
 
                         if (str.startsWith("/auth")) {
@@ -38,40 +44,71 @@ public class ClientHandler {
                             String newNick = server
                                     .getAuthService()
                                     .getNicknameByLoginAndPassword(token[1], token[2]);
+                            login = token[1];
                             if (newNick != null) {
-                                sendMsg("/authok " + newNick);
-                                nick = newNick;
-                                login = token[1];
-                                server.subscribe(this);
-                                System.out.printf("Клиент %s подключился \n", nick);
-                                break;
+                                if (!server.isLoginAuthorized(login)) {
+                                    sendMsg("/authok " + newNick);
+                                    nick = newNick;
+                                    login = token[1];
+                                    server.subscribe(this);
+                                    System.out.printf("Клиент %s подключился \n", nick);
+                                    socket.setSoTimeout(0);// обнуляю таймер при успешной авторизации
+                                    break;
+                                } else {
+                                    sendMsg("С этим логином уже авторизовались");
+                                }
                             } else {
                                 sendMsg("Неверный логин / пароль");
                             }
                         }
 
-                        server.broadcastMsg(str);
+                        if (str.startsWith("/reg ")){
+                            String[] token = str.split("\\s");
+                            if (token.length < 4){
+                                continue;
+                            }
+                            boolean b = server.getAuthService().registration(token[1],token[2],token[3]);
+                            if(b){
+                                sendMsg("/regresult ok");
+                            }else{
+                                sendMsg("/regresult failed");
+                            }
+                        }
                     }
 
 
                     //цикл работы
                     while (true) {
-                        out = new DataOutputStream(socket.getOutputStream());
                         String str = in.readUTF();
-                        if (str.startsWith("/w ")) {
 
-                            sendMsgNick(str);
-
-
-                        } else if (str.equals("/end")) {
-                            out.writeUTF("/end");
-                            break;
-                        } else {
-                            server.broadcastMsg(str);
+                        if(str.startsWith("/")){
+                            if (str.equals("/end")) {
+                                out.writeUTF("/end");
+                                break;
+                            }
+                            if (str.startsWith("/w ")) {
+                                String[] token = str.split("\\s",3);
+                                if (token.length < 3 ){
+                                    continue;
+                                }
+                                server.privateMsg(this, token[1], token[2]);
+                            }
+                        }
+                          else {
+                            server.broadcastMsg(this,str);
                         }
 
                     }
-                } catch (IOException e) {
+
+                }catch (SocketTimeoutException e){
+                    try {
+                        System.out.println("time out client"); // это для проверки работы
+                        out.writeUTF("/end");// отправляю системное сообщение
+                    } catch (IOException ioException) {
+                        ioException.printStackTrace();
+                    }
+
+                }catch (IOException e) {
                     e.printStackTrace();
                 } finally {
                     System.out.println("Клиент отключился");
@@ -79,7 +116,8 @@ public class ClientHandler {
                     try {
                         in.close();
                         out.close();
-                    } catch (IOException e) {
+                    }
+                    catch (IOException e) {
                         e.printStackTrace();
                     }
                     try {
@@ -93,21 +131,9 @@ public class ClientHandler {
             e.printStackTrace();
         }
     }
-// метод отправляет сообщение определленному клиенту
-   void sendMsgNick(String msg) {
-        try {
-            String msgNick = msg.split("\\s")[1];
-            msg = msg.split("\\s")[2];
-            Socket socketNick = server.narrowlyTargetedMsg(msgNick);
-            if (socketNick != null) {
 
-                out = new DataOutputStream(socketNick.getOutputStream());
-                out.writeUTF(getNick() + ": "+ msg);
-
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public String getLogin() {
+        return login;
     }
 
     void sendMsg(String str) {
@@ -122,8 +148,5 @@ public class ClientHandler {
         return nick;
     }
 
-    public Socket getSocket() {
-        return socket;
-    }
 
 }

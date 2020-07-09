@@ -9,18 +9,17 @@ import java.util.Vector;
 public class Server {
     private List<ClientHandler> clients;
     private AuthService authService;
-    Socket socket;
 
     public AuthService getAuthService() {
         return authService;
     }
-
 
     public Server() {
         clients = new Vector<>();
         authService = new SimpleAuthService();
 
         ServerSocket server = null;
+        Socket socket;
 
 
         final int PORT = 8189;
@@ -49,34 +48,59 @@ public class Server {
         }
 
     }
-// метод проверяет есть ли клиент с таким ником
-    Socket narrowlyTargetedMsg(String nick){
-
-            for (ClientHandler client : clients) {
-
-                if (client.getNick().equals(nick)){
-                    return client.getSocket();
-                }
-        }
-
-        return null;
-        }
 
 
-
-
-    void broadcastMsg(String msg) {
+    void broadcastMsg(ClientHandler sender, String msg) {
+        String message = String.format("%s : %s", sender.getNick(),msg);
         for (ClientHandler client : clients) {
-            client.sendMsg(msg);
+            client.sendMsg(message);
         }
+    }
+    void privateMsg(ClientHandler sender, String receiver, String msg){
+        String message = String.format("[%s] private [%s] : %s", sender.getNick(), receiver, msg);
+
+        for (ClientHandler c : clients) {
+            if (c.getNick().equals(receiver)){
+                c.sendMsg(message);
+                if (!sender.getNick().equals(c.getNick())) {
+                    sender.sendMsg(message);
+                }
+                return;
+            }
+        }
+        sender.sendMsg(String.format("Client %s not found", receiver));
     }
 
     public void subscribe(ClientHandler clientHandler) {
         clients.add(clientHandler);
+        broadcastClientList();
     }
 
     public void unsubscribe(ClientHandler clientHandler) {
         clients.remove(clientHandler);
+        broadcastClientList();
+    }
+
+
+
+    public boolean isLoginAuthorized(String login){
+        for (ClientHandler c : clients) {
+            if (c.getLogin().equals(login)){
+                return true;
+            }
+        }
+        return false;
+    }
+    void broadcastClientList() {
+        StringBuilder sb = new StringBuilder("/clientlist ");
+        for (ClientHandler c : clients) {
+            sb.append(c.getNick()).append(" ");
+        }
+        String msg = sb.toString();
+
+        for (ClientHandler c : clients) {
+            c.sendMsg(msg);
+        }
     }
 }
 
